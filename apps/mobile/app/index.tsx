@@ -1,6 +1,14 @@
+import { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { createLogger } from "../lib/logger";
+
+const log = createLogger("HomeScreen");
 
 export default function HomeScreen() {
+  useEffect(() => {
+    log.info("HomeScreen mounted");
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Hello World</Text>
