@@ -132,6 +132,11 @@ detect_docker() {
     [ -f "$PROJECT_ROOT/compose.yaml" ]
 }
 
+# Detect Expo mobile project
+detect_expo() {
+    [ -d "$PROJECT_ROOT/apps/mobile" ] && [ -f "$PROJECT_ROOT/apps/mobile/app.json" ]
+}
+
 # =============================================================================
 # STACK ENABLED CHECKS (respects config overrides)
 # =============================================================================
@@ -174,6 +179,23 @@ is_docker_enabled() {
         false) return 1 ;;
         auto|*) detect_docker ;;
     esac
+}
+
+is_expo_enabled() {
+    case "${ENABLE_EXPO:-auto}" in
+        true) return 0 ;;
+        false) return 1 ;;
+        auto|*) detect_expo ;;
+    esac
+}
+
+# Get Expo mobile directory
+get_expo_dir() {
+    if [ -n "${EXPO_DIR:-}" ]; then
+        echo "$PROJECT_ROOT/$EXPO_DIR"
+    else
+        echo "$PROJECT_ROOT/apps/mobile"
+    fi
 }
 
 # =============================================================================
@@ -310,6 +332,11 @@ print_detected_stacks() {
     
     if is_docker_enabled; then
         echo "  - Docker"
+        found=true
+    fi
+    
+    if is_expo_enabled; then
+        echo "  - Expo Mobile ($(get_expo_dir))"
         found=true
     fi
     

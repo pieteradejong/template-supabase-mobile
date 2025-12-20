@@ -33,10 +33,12 @@ FRONTEND_PORT=${FRONTEND_PORT:-5173}
 # Process tracking
 BACKEND_PID=""
 FRONTEND_PID=""
+MOBILE_PID=""
 
 # Log files
 BACKEND_LOG="/tmp/${PROJECT_NAME:-project}_backend.log"
 FRONTEND_LOG="/tmp/${PROJECT_NAME:-project}_frontend.log"
+MOBILE_LOG="/tmp/${PROJECT_NAME:-project}_mobile.log"
 
 # =============================================================================
 # ARGUMENT PARSING
@@ -51,6 +53,7 @@ show_help() {
     echo "  all         Start all detected services (default)"
     echo "  backend     Start only backend services (Python, Rust, Go)"
     echo "  frontend    Start only frontend services (Node.js)"
+    echo "  mobile      Start only Expo mobile app"
     echo "  docker      Start with Docker Compose"
     echo ""
     echo "Options:"
@@ -66,7 +69,7 @@ MODE="all"
 
 for arg in "$@"; do
     case $arg in
-        backend|frontend|all|docker)
+        backend|frontend|mobile|all|docker)
             MODE="$arg"
             ;;
         --help|-h)
@@ -98,6 +101,12 @@ cleanup() {
         kill "$FRONTEND_PID" 2>/dev/null || true
         wait "$FRONTEND_PID" 2>/dev/null || true
         log_info "Frontend stopped"
+    fi
+    
+    if [ -n "$MOBILE_PID" ]; then
+        kill "$MOBILE_PID" 2>/dev/null || true
+        wait "$MOBILE_PID" 2>/dev/null || true
+        log_info "Mobile stopped"
     fi
     
     exit 0
@@ -262,6 +271,38 @@ start_docker() {
 }
 
 # =============================================================================
+# EXPO MOBILE STARTER
+# =============================================================================
+
+start_expo_mobile() {
+    local expo_dir=$(get_expo_dir)
+    local run_prefix=$(get_node_run_prefix)
+    
+    if [ ! -d "$expo_dir/node_modules" ]; then
+        log_error "node_modules not found in $expo_dir"
+        log_info "Run './scripts/init.sh' first"
+        return 1
+    fi
+    
+    log_step "Starting Expo mobile app..."
+    
+    cd "$expo_dir"
+    
+    # Determine run command
+    local run_cmd=""
+    if [ -n "$RUN_EXPO_CMD" ]; then
+        run_cmd="$RUN_EXPO_CMD"
+    else
+        run_cmd="$run_prefix dev"
+    fi
+    
+    # Run Expo in foreground (interactive for QR code scanning)
+    eval "$run_cmd"
+    
+    cd "$PROJECT_ROOT"
+}
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -308,6 +349,16 @@ case $MODE in
         wait "$FRONTEND_PID" 2>/dev/null || true
         ;;
     
+    mobile)
+        if is_expo_enabled; then
+            start_expo_mobile
+        else
+            log_error "No Expo mobile app detected"
+            log_info "Expected: apps/mobile/app.json"
+            exit 1
+        fi
+        ;;
+    
     all|*)
         started=false
         
@@ -329,14 +380,27 @@ case $MODE in
             echo ""
         fi
         
+        # Start mobile (Expo runs in foreground, so check it last)
+        if is_expo_enabled; then
+            if [ "$started" = true ]; then
+                log_info "Mobile app detected. Run './scripts/run.sh mobile' separately for Expo."
+            else
+                start_expo_mobile
+                started=true
+            fi
+        fi
+        
         if [ "$started" = false ]; then
             log_error "No services could be started"
             log_info "Make sure you have run './scripts/init.sh' first"
             exit 1
         fi
         
-        log_success "All services running. Press Ctrl+C to stop"
-        echo ""
+        # Only show "running" message if we have background processes
+        if [ -n "$BACKEND_PID" ] || [ -n "$FRONTEND_PID" ]; then
+            log_success "All services running. Press Ctrl+C to stop"
+            echo ""
+        fi
         
         # Wait for all processes
         if [ -n "$BACKEND_PID" ] && [ -n "$FRONTEND_PID" ]; then
