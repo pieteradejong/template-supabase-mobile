@@ -3,6 +3,7 @@
 **Goal:** Empty monorepo with working `init.sh`, `test.sh`, and `run.sh` scripts.
 
 **Definition of Done:**
+
 ```bash
 git clone <repo>
 ./init.sh           # Completes with exit 0
@@ -22,6 +23,7 @@ git clone <repo>
 - [ ] `.gitignore` - Comprehensive ignore patterns
 
 #### `package.json`
+
 ```json
 {
   "name": "supabase-react-native-template",
@@ -46,10 +48,11 @@ git clone <repo>
 ```
 
 #### `pnpm-workspace.yaml`
+
 ```yaml
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 ```
 
 ---
@@ -61,6 +64,7 @@ packages:
 - [ ] `tsconfig.base.json` - Shared compiler options
 
 #### `tsconfig.base.json`
+
 ```json
 {
   "compilerOptions": {
@@ -98,31 +102,37 @@ packages:
 - [ ] Add lint dependencies to root `package.json`
 
 #### `.eslintrc.js`
+
 ```javascript
 module.exports = {
   root: true,
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  parser: "@typescript-eslint/parser",
+  plugins: ["@typescript-eslint"],
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
-    'prettier',
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "prettier",
   ],
   parserOptions: {
-    project: ['./tsconfig.base.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
+    project: [
+      "./tsconfig.base.json",
+      "./apps/*/tsconfig.json",
+      "./packages/*/tsconfig.json",
+    ],
     tsconfigRootDir: __dirname,
   },
   rules: {
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/consistent-type-imports': 'error',
-    '@typescript-eslint/no-explicit-any': 'error',
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/consistent-type-imports": "error",
+    "@typescript-eslint/no-explicit-any": "error",
   },
-  ignorePatterns: ['node_modules', 'dist', '.expo', 'build'],
+  ignorePatterns: ["node_modules", "dist", ".expo", "build"],
 };
 ```
 
 #### `.prettierrc`
+
 ```json
 {
   "semi": true,
@@ -134,6 +144,7 @@ module.exports = {
 ```
 
 #### Dependencies to add
+
 ```json
 {
   "devDependencies": {
@@ -164,6 +175,7 @@ module.exports = {
 - [ ] `apps/web/src/index.css` (Tailwind imports)
 
 #### `apps/web/package.json`
+
 ```json
 {
   "name": "@acme/web",
@@ -192,6 +204,7 @@ module.exports = {
 ```
 
 #### `apps/web/src/App.tsx`
+
 ```tsx
 export function App() {
   return (
@@ -220,6 +233,7 @@ export function App() {
 - [ ] `apps/mobile/app/index.tsx`
 
 #### `apps/mobile/package.json`
+
 ```json
 {
   "name": "@acme/mobile",
@@ -249,8 +263,9 @@ export function App() {
 ```
 
 #### `apps/mobile/app/index.tsx`
+
 ```tsx
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from "react-native";
 
 export default function HomeScreen() {
   return (
@@ -264,19 +279,19 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f3f4f6',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f3f4f6",
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: "bold",
+    color: "#111827",
   },
   subtitle: {
     marginTop: 8,
     fontSize: 16,
-    color: '#4b5563',
+    color: "#4b5563",
   },
 });
 ```
@@ -298,6 +313,7 @@ const styles = StyleSheet.create({
 - [ ] `packages/utils/tsconfig.json`
 
 #### Example: `packages/supabase/package.json`
+
 ```json
 {
   "name": "@acme/supabase",
@@ -314,6 +330,7 @@ const styles = StyleSheet.create({
 ```
 
 #### Example: `packages/supabase/src/index.ts`
+
 ```typescript
 // Supabase client will be implemented in Phase 1
 export {};
@@ -329,6 +346,7 @@ export {};
 - [ ] `packages/utils/src/env.ts` - Environment validation (stub)
 
 #### `.env.example`
+
 ```bash
 # Supabase Configuration
 SUPABASE_URL=http://localhost:54321
@@ -348,6 +366,7 @@ APP_ENV=development
 - [ ] `scripts/init.sh`
 
 #### `scripts/init.sh`
+
 ```bash
 #!/bin/bash
 set -e
@@ -430,6 +449,7 @@ echo ""
 - [ ] `scripts/test.sh`
 
 #### `scripts/test.sh`
+
 ```bash
 #!/bin/bash
 set -e
@@ -526,6 +546,7 @@ fi
 - [ ] `scripts/run.sh`
 
 #### `scripts/run.sh`
+
 ```bash
 #!/bin/bash
 
@@ -584,11 +605,11 @@ if [ "$RUN_WEB" = true ] && [ "$RUN_MOBILE" = true ]; then
     echo -e "${YELLOW}Web:${NC}    http://localhost:5173"
     echo -e "${YELLOW}Mobile:${NC} Press 'i' for iOS, 'a' for Android in Expo"
     echo ""
-    
+
     # Run both in parallel
     (cd apps/web && pnpm dev) &
     (cd apps/mobile && pnpm dev) &
-    
+
     wait
 elif [ "$RUN_WEB" = true ]; then
     echo ""
@@ -614,6 +635,7 @@ fi
 - [ ] `.github/workflows/ci.yml`
 
 #### `.github/workflows/ci.yml`
+
 ```yaml
 name: CI
 
@@ -626,28 +648,28 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      
+          node-version: "20"
+          cache: "pnpm"
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Run tests
         run: ./scripts/test.sh --ci
-      
+
       - name: Build web
         run: cd apps/web && pnpm build
 ```
@@ -661,7 +683,8 @@ jobs:
 - [ ] `README.md`
 
 #### `README.md`
-```markdown
+
+````markdown
 # Supabase + React + React Native Template
 
 A production-ready monorepo template for building web and mobile apps with shared code.
@@ -686,16 +709,17 @@ cd <repo-name>
 # Start development servers
 ./scripts/run.sh
 ```
+````
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `./scripts/init.sh` | Initialize project (install deps, setup env) |
-| `./scripts/test.sh` | Run all tests (lint, typecheck, unit, integration) |
-| `./scripts/run.sh` | Start development servers |
-| `./scripts/run.sh --web` | Start web only |
-| `./scripts/run.sh --mobile` | Start mobile only |
+| Script                      | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `./scripts/init.sh`         | Initialize project (install deps, setup env)       |
+| `./scripts/test.sh`         | Run all tests (lint, typecheck, unit, integration) |
+| `./scripts/run.sh`          | Start development servers                          |
+| `./scripts/run.sh --web`    | Start web only                                     |
+| `./scripts/run.sh --mobile` | Start mobile only                                  |
 
 ## Project Structure
 
@@ -720,7 +744,8 @@ cd <repo-name>
 ## License
 
 MIT
-```
+
+````
 
 ---
 
@@ -736,7 +761,7 @@ MIT
 ./scripts/init.sh    # Should complete with exit 0
 ./scripts/test.sh    # Should complete with exit 0
 ./scripts/run.sh     # Should start both servers
-```
+````
 
 ---
 

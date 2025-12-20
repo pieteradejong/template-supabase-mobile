@@ -3,6 +3,7 @@
 ## Project Overview
 
 A production-ready GitHub template combining:
+
 - **Web**: Vite + React + Tailwind
 - **Mobile**: Expo (managed workflow) targeting iOS and Android
 - **Backend**: Supabase (Auth, Database, Realtime, Storage, Edge Functions)
@@ -252,7 +253,7 @@ export function useAuth() {
     signInWithPassword: (email: string, password: string) => Promise<void>,
     signUp: (email: string, password: string) => Promise<void>,
     signOut: () => Promise<void>,
-  }
+  };
 }
 ```
 
@@ -300,7 +301,7 @@ export function useAuth() {
 
 ```typescript
 // packages/utils/src/validation/items.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const createItemSchema = z.object({
   title: z.string().min(1).max(200),
@@ -349,6 +350,7 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 ### Deliverables
 
 #### Edge Functions
+
 - [ ] Example edge function with:
   - JWT verification (reusable helper)
   - Input validation (Zod)
@@ -358,11 +360,13 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 - [ ] Local edge function development setup
 
 #### Realtime
+
 - [ ] Realtime subscription hook
 - [ ] Example: items table changes reflected live in both apps
 - [ ] Proper cleanup on unmount
 
 #### Storage
+
 - [ ] Storage bucket setup (with RLS)
 - [ ] Upload file example (both apps)
 - [ ] Download/display file example
@@ -372,37 +376,37 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
 ```typescript
 // supabase/functions/example/index.ts
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   // CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     // Verify JWT
-    const authHeader = req.headers.get('Authorization')
+    const authHeader = req.headers.get("Authorization");
     // ... verification logic
 
     // Validate input
-    const body = await req.json()
+    const body = await req.json();
     // ... Zod validation
 
     // Business logic
     // ...
 
     return new Response(JSON.stringify({ data }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
-})
+});
 ```
 
 ### Acceptance Criteria
@@ -432,6 +436,7 @@ serve(async (req) => {
 ### Deliverables
 
 #### Documentation
+
 - [ ] README.md - Quick start, project overview
 - [ ] docs/SETUP.md - Detailed setup guide
 - [ ] docs/ARCHITECTURE.md - How the pieces fit together
@@ -441,6 +446,7 @@ serve(async (req) => {
 - [ ] docs/TROUBLESHOOTING.md - Common issues and solutions
 
 #### Template Polish
+
 - [ ] Clean up all TODO comments
 - [ ] Consistent code style throughout
 - [ ] Helpful inline comments for learning
@@ -450,6 +456,7 @@ serve(async (req) => {
 - [ ] LICENSE file
 
 #### Final Testing
+
 - [ ] Fresh clone test (someone unfamiliar tries it)
 - [ ] All documentation is accurate
 - [ ] All links work
@@ -510,17 +517,119 @@ MIT
 
 ---
 
+## Phase 6: Logging & Health Checks
+
+**Goal:** Production-grade observability
+
+### Deliverables
+
+#### Logging
+
+- [ ] Shared logger in `packages/utils`
+- [ ] Structured JSON log format
+- [ ] Log levels (error, warn, info, debug)
+- [ ] Correlation ID generation and propagation
+- [ ] Request/response logging middleware (web)
+- [ ] Sensitive data redaction
+- [ ] Environment-based log level configuration
+
+#### Health Checks
+
+- [ ] `/health/live` endpoint (liveness)
+- [ ] `/health/ready` endpoint (readiness)
+- [ ] Supabase connection check
+- [ ] Response caching (prevent hammering dependencies)
+- [ ] Graceful degradation for non-critical services
+- [ ] Health check in CI (verify app starts correctly)
+
+#### Documentation
+
+- [ ] LOGGING.md - Logging standards and patterns
+- [ ] Update ARCHITECTURE.md with observability patterns
+
+### Logger Implementation
+
+```typescript
+// packages/utils/src/logger.ts
+interface LogEntry {
+  timestamp: string;
+  level: "error" | "warn" | "info" | "debug";
+  message: string;
+  service: string;
+  correlationId?: string;
+  userId?: string;
+  metadata?: Record<string, unknown>;
+  error?: {
+    name: string;
+    message: string;
+    stack?: string;
+  };
+}
+
+interface Logger {
+  error(message: string, error?: Error, metadata?: object): void;
+  warn(message: string, metadata?: object): void;
+  info(message: string, metadata?: object): void;
+  debug(message: string, metadata?: object): void;
+  child(context: object): Logger;
+}
+```
+
+### Health Check Implementation
+
+```typescript
+// Response format
+interface HealthResponse {
+  status: "ok" | "degraded" | "error";
+  checks?: Record<
+    string,
+    {
+      status: "ok" | "degraded" | "error";
+      latency_ms?: number;
+      message?: string;
+    }
+  >;
+  version?: string;
+  uptime_seconds?: number;
+}
+
+// Endpoints
+// GET /health/live   → { status: 'ok' }
+// GET /health/ready  → { status: 'ok', checks: { database: {...} } }
+```
+
+### Acceptance Criteria
+
+```bash
+./test.sh
+# - Logger outputs structured JSON
+# - Correlation IDs propagate through requests
+# - Sensitive data is redacted
+# - /health/live returns 200 when app is running
+# - /health/ready returns 200 when Supabase is connected
+# - /health/ready returns 503 when Supabase is down
+```
+
+### Definition of Done
+
+- [ ] All apps use shared logger
+- [ ] Health endpoints work on web
+- [ ] Health checks integrated into CI
+- [ ] LOGGING.md documents all patterns
+
+---
+
 ## Appendix A: Technology Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Web framework | Vite + React | Fast, simple, well-supported |
-| Mobile framework | Expo (managed) | Easier cross-platform, EAS for builds |
-| Styling | Tailwind CSS | Utility-first, works well in both contexts |
-| Monorepo | pnpm workspaces | Simple, no extra tooling needed |
-| Auth method | Magic link (primary) | Lowest friction, no passwords |
-| Validation | Zod | Type-safe, great DX |
-| Backend | Supabase | Full-featured, good DX, scales well |
+| Decision         | Choice               | Rationale                                  |
+| ---------------- | -------------------- | ------------------------------------------ |
+| Web framework    | Vite + React         | Fast, simple, well-supported               |
+| Mobile framework | Expo (managed)       | Easier cross-platform, EAS for builds      |
+| Styling          | Tailwind CSS         | Utility-first, works well in both contexts |
+| Monorepo         | pnpm workspaces      | Simple, no extra tooling needed            |
+| Auth method      | Magic link (primary) | Lowest friction, no passwords              |
+| Validation       | Zod                  | Type-safe, great DX                        |
+| Backend          | Supabase             | Full-featured, good DX, scales well        |
 
 ## Appendix B: Environment Variables
 
@@ -556,8 +665,8 @@ jobs:
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
       - run: pnpm install
       - run: ./test.sh --ci
 ```

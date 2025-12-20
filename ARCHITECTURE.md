@@ -49,6 +49,7 @@ apps/web/
 ```
 
 **Key decisions:**
+
 - Vite for fast dev server and optimized builds
 - File-based routing is NOT enforced (keep it flexible)
 - Tailwind for styling (utility-first, purged in production)
@@ -72,6 +73,7 @@ apps/mobile/
 ```
 
 **Key decisions:**
+
 - Managed workflow for simpler updates and EAS integration
 - Expo Router for file-based navigation (consistent with modern patterns)
 - Expo SecureStore for sensitive data (tokens)
@@ -102,12 +104,12 @@ packages/supabase/
 
 ```typescript
 // Client initialization - NEVER import service role client in apps
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@acme/types';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@acme/types";
 
 export const supabase = createClient<Database>(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  process.env.SUPABASE_ANON_KEY!,
 );
 ```
 
@@ -133,6 +135,7 @@ packages/types/
 ```
 
 **Generation command:**
+
 ```bash
 supabase gen types typescript --project-id <ref> > packages/types/src/database.ts
 ```
@@ -215,24 +218,28 @@ CREATE POLICY "Users can delete own items"
 ```typescript
 // supabase/functions/_shared/cors.ts
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') || '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 // supabase/functions/_shared/auth.ts
 export async function verifyAuth(req: Request) {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) throw new Error('Missing authorization header');
-  
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) throw new Error("Missing authorization header");
+
   const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
   );
-  
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error('Invalid token');
-  
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("Invalid token");
+
   return { supabase, user };
 }
 ```
@@ -255,15 +262,16 @@ export async function verifyAuth(req: Request) {
 
 ### Token Storage
 
-| Platform | Storage | Security |
-|----------|---------|----------|
-| Web | localStorage | Vulnerable to XSS; CSP mitigates |
-| iOS | Expo SecureStore | Keychain (encrypted) |
-| Android | Expo SecureStore | EncryptedSharedPreferences |
+| Platform | Storage          | Security                         |
+| -------- | ---------------- | -------------------------------- |
+| Web      | localStorage     | Vulnerable to XSS; CSP mitigates |
+| iOS      | Expo SecureStore | Keychain (encrypted)             |
+| Android  | Expo SecureStore | EncryptedSharedPreferences       |
 
 ### Session Refresh
 
 Supabase SDK handles refresh automatically. The custom auth hook should:
+
 1. Listen for `onAuthStateChange` events
 2. Update React state accordingly
 3. Handle token refresh errors (sign out user)
@@ -279,6 +287,7 @@ We keep state management minimal:
 3. **Local state**: React's useState/useReducer
 
 **Why no Redux/Zustand by default?**
+
 - Supabase handles server state well
 - Auth context covers the main global state need
 - Users can add state management if needed
@@ -317,14 +326,17 @@ Defense in depth: even if one layer fails, others protect the data.
 ## Environment Configuration
 
 ### Development
+
 - Local Supabase via Docker (`supabase start`)
 - `.env.local` with local URLs
 
 ### Staging (optional)
+
 - Separate Supabase project
 - `.env.staging`
 
 ### Production
+
 - Production Supabase project
 - Environment variables in deployment platform
 - NEVER commit production secrets
@@ -335,16 +347,17 @@ Defense in depth: even if one layer fails, others protect the data.
 
 ```typescript
 // Absolute imports from packages
-import { supabase, useAuth } from '@acme/supabase';
-import { createItemSchema } from '@acme/utils';
-import type { Database } from '@acme/types';
+import { supabase, useAuth } from "@acme/supabase";
+import { createItemSchema } from "@acme/utils";
+import type { Database } from "@acme/types";
 
 // Relative imports within an app
-import { Button } from '../components/Button';
-import { useLocalState } from '../hooks/useLocalState';
+import { Button } from "../components/Button";
+import { useLocalState } from "../hooks/useLocalState";
 ```
 
 Configure in `tsconfig.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -359,11 +372,11 @@ Configure in `tsconfig.json`:
 
 ## Testing Strategy
 
-| Layer | Tool | What to Test |
-|-------|------|--------------|
-| Unit | Vitest | Utilities, validation schemas, pure functions |
-| Integration | Vitest + Supabase | Database queries, RLS policies, auth flows |
-| E2E (optional) | Playwright/Detox | Critical user journeys |
+| Layer          | Tool              | What to Test                                  |
+| -------------- | ----------------- | --------------------------------------------- |
+| Unit           | Vitest            | Utilities, validation schemas, pure functions |
+| Integration    | Vitest + Supabase | Database queries, RLS policies, auth flows    |
+| E2E (optional) | Playwright/Detox  | Critical user journeys                        |
 
 ### RLS Testing Pattern
 
@@ -373,14 +386,14 @@ const userA = await createTestUser();
 const userB = await createTestUser();
 
 // User A creates an item
-const item = await supabaseAs(userA).from('items').insert({ title: 'A item' });
+const item = await supabaseAs(userA).from("items").insert({ title: "A item" });
 
 // User B should NOT see it
-const { data } = await supabaseAs(userB).from('items').select('*');
+const { data } = await supabaseAs(userB).from("items").select("*");
 expect(data).toHaveLength(0);
 
 // User A should see it
-const { data: ownData } = await supabaseAs(userA).from('items').select('*');
+const { data: ownData } = await supabaseAs(userA).from("items").select("*");
 expect(ownData).toHaveLength(1);
 ```
 

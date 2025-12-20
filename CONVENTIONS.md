@@ -36,11 +36,11 @@ Always use type-only imports for types:
 
 ```typescript
 // ✅ Good
-import type { User } from '@acme/types';
-import { supabase } from '@acme/supabase';
+import type { User } from "@acme/types";
+import { supabase } from "@acme/supabase";
 
 // ❌ Bad
-import { User } from '@acme/types';  // User is only a type
+import { User } from "@acme/types"; // User is only a type
 ```
 
 ### Prefer Interfaces for Object Shapes
@@ -54,7 +54,7 @@ interface UserProfile {
 }
 
 // ✅ Good - use type for unions, primitives, computed types
-type Status = 'loading' | 'success' | 'error';
+type Status = "loading" | "success" | "error";
 type UserWithPosts = User & { posts: Post[] };
 
 // ❌ Bad - type for simple object shapes
@@ -103,11 +103,11 @@ const Button: React.FC<ButtonProps> = ({ children }) => { };
 ```typescript
 // ✅ Good - Props suffix
 interface ButtonProps {
-  variant?: 'primary' | 'secondary';
+  variant?: "primary" | "secondary";
   children: React.ReactNode;
 }
 
-export function Button({ variant = 'primary', children }: ButtonProps) { }
+export function Button({ variant = "primary", children }: ButtonProps) {}
 ```
 
 ### Hooks
@@ -117,9 +117,9 @@ export function Button({ variant = 'primary', children }: ButtonProps) { }
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // ... logic
-  
+
   return {
     user,
     loading,
@@ -129,7 +129,7 @@ export function useAuth() {
 }
 
 // ✅ Good - custom hooks start with "use"
-export function useDebounce<T>(value: T, delay: number): T { }
+export function useDebounce<T>(value: T, delay: number): T {}
 ```
 
 ### Event Handlers
@@ -141,7 +141,7 @@ function LoginForm() {
     e.preventDefault();
     // ...
   };
-  
+
   return <form onSubmit={handleSubmit}>...</form>;
 }
 
@@ -169,7 +169,7 @@ function LoginForm() {
 Button.tsx
 UserProfile.tsx
 
-# Hooks - camelCase with "use" prefix  
+# Hooks - camelCase with "use" prefix
 useAuth.ts
 useDebounce.ts
 
@@ -200,9 +200,9 @@ Use `index.ts` for clean exports:
 
 ```typescript
 // packages/utils/src/index.ts
-export * from './validation';
-export * from './formatting';
-export { CONSTANTS } from './constants';
+export * from "./validation";
+export * from "./formatting";
+export { CONSTANTS } from "./constants";
 ```
 
 ---
@@ -218,30 +218,30 @@ export { CONSTANTS } from './constants';
 
 ```typescript
 // 1. External
-import { useState, useEffect } from 'react';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { z } from "zod";
 
 // 2. Internal packages
-import { supabase } from '@acme/supabase';
-import { formatDate } from '@acme/utils';
+import { supabase } from "@acme/supabase";
+import { formatDate } from "@acme/utils";
 
 // 3. Relative
-import { Button } from '../components/Button';
-import { useLocalState } from './useLocalState';
+import { Button } from "../components/Button";
+import { useLocalState } from "./useLocalState";
 
 // 4. Types
-import type { User } from '@acme/types';
+import type { User } from "@acme/types";
 ```
 
 ### No Default Exports
 
 ```typescript
 // ✅ Good - named exports
-export function Button() { }
-export const BUTTON_VARIANTS = ['primary', 'secondary'];
+export function Button() {}
+export const BUTTON_VARIANTS = ["primary", "secondary"];
 
 // ❌ Bad - default exports (harder to refactor, inconsistent imports)
-export default function Button() { }
+export default function Button() {}
 ```
 
 Exception: Page components if required by framework (Next.js, Expo Router).
@@ -261,15 +261,15 @@ interface Result<T, E = Error> {
 
 async function fetchUser(id: string): Promise<Result<User>> {
   const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
+    .from("users")
+    .select("*")
+    .eq("id", id)
     .single();
-    
+
   if (error) {
     return { data: null, error };
   }
-  
+
   return { data, error: null };
 }
 ```
@@ -299,7 +299,7 @@ const userSchema = z.object({
 async function fetchUser(id: string) {
   const response = await fetch(`/api/users/${id}`);
   const data = await response.json();
-  return userSchema.parse(data);  // Throws if invalid
+  return userSchema.parse(data); // Throws if invalid
 }
 ```
 
@@ -312,13 +312,13 @@ async function fetchUser(id: string) {
 ```typescript
 // ✅ Good - typed queries
 const { data, error } = await supabase
-  .from('items')
-  .select('id, title, created_at')
-  .eq('user_id', userId)
-  .order('created_at', { ascending: false });
+  .from("items")
+  .select("id, title, created_at")
+  .eq("user_id", userId)
+  .order("created_at", { ascending: false });
 
 // ❌ Bad - select('*') when you don't need everything
-const { data } = await supabase.from('items').select('*');
+const { data } = await supabase.from("items").select("*");
 ```
 
 ### RLS-Aware Code
@@ -326,13 +326,13 @@ const { data } = await supabase.from('items').select('*');
 ```typescript
 // ✅ Good - trust RLS, keep queries simple
 // RLS ensures user can only see their items
-const { data: items } = await supabase.from('items').select('*');
+const { data: items } = await supabase.from("items").select("*");
 
 // ❌ Bad - redundant filtering (RLS already handles this)
 const { data: items } = await supabase
-  .from('items')
-  .select('*')
-  .eq('user_id', currentUser.id);  // RLS already does this
+  .from("items")
+  .select("*")
+  .eq("user_id", currentUser.id); // RLS already does this
 ```
 
 ### Realtime Subscriptions
@@ -341,14 +341,16 @@ const { data: items } = await supabase
 // ✅ Good - clean up subscriptions
 useEffect(() => {
   const channel = supabase
-    .channel('items')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, 
+    .channel("items")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "items" },
       (payload) => {
         // Handle change
-      }
+      },
     )
     .subscribe();
-    
+
   return () => {
     supabase.removeChannel(channel);
   };
@@ -383,12 +385,10 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 async function createItem(input: unknown) {
   // 1. Validate input
   const validatedInput = createItemSchema.parse(input);
-  
+
   // 2. Use validated data
-  const { data, error } = await supabase
-    .from('items')
-    .insert(validatedInput);
-    
+  const { data, error } = await supabase.from("items").insert(validatedInput);
+
   return { data, error };
 }
 ```
@@ -414,27 +414,27 @@ src/
 ### Test Naming
 
 ```typescript
-describe('formatDate', () => {
-  it('formats ISO date to readable string', () => { });
-  it('returns "Invalid date" for malformed input', () => { });
-  it('handles timezone offsets correctly', () => { });
+describe("formatDate", () => {
+  it("formats ISO date to readable string", () => {});
+  it('returns "Invalid date" for malformed input', () => {});
+  it("handles timezone offsets correctly", () => {});
 });
 ```
 
 ### Arrange-Act-Assert
 
 ```typescript
-it('creates an item for authenticated user', async () => {
+it("creates an item for authenticated user", async () => {
   // Arrange
   const user = await createTestUser();
-  const input = { title: 'Test Item' };
-  
+  const input = { title: "Test Item" };
+
   // Act
   const result = await createItem(user, input);
-  
+
   // Assert
   expect(result.error).toBeNull();
-  expect(result.data?.title).toBe('Test Item');
+  expect(result.data?.title).toBe("Test Item");
 });
 ```
 
@@ -451,7 +451,7 @@ const MAX_RETRIES = 3;
 
 // ✅ Good - document non-obvious behavior
 // RLS handles user filtering, so we select all and let the policy filter
-const { data } = await supabase.from('items').select('*');
+const { data } = await supabase.from("items").select("*");
 
 // ❌ Bad - explains the obvious
 // Increment counter by 1
@@ -515,12 +515,14 @@ Always validate at startup:
 
 ```typescript
 // packages/utils/src/env.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
-  APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+  APP_ENV: z
+    .enum(["development", "staging", "production"])
+    .default("development"),
 });
 
 export const env = envSchema.parse(process.env);

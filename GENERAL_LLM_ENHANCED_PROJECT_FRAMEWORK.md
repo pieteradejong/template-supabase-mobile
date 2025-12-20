@@ -34,11 +34,11 @@ LLMs make mistakes. Every output must be verifiable:
 
 Every project has exactly three entry points:
 
-| Script | Purpose | Contract |
-|--------|---------|----------|
-| `init.sh` | Setup from zero | Exit 0 = ready to develop |
-| `test.sh` | Verify everything | Exit 0 = safe to deploy |
-| `run.sh` | Start development | Runs all services |
+| Script    | Purpose           | Contract                  |
+| --------- | ----------------- | ------------------------- |
+| `init.sh` | Setup from zero   | Exit 0 = ready to develop |
+| `test.sh` | Verify everything | Exit 0 = safe to deploy   |
+| `run.sh`  | Start development | Runs all services         |
 
 These scripts are the source of truth. If it's not in a script, it doesn't exist.
 
@@ -53,6 +53,7 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 **Purpose:** Define what we're building and in what order.
 
 **Must include:**
+
 - Project overview (one paragraph)
 - Phased build plan with clear boundaries
 - Each phase must have:
@@ -62,32 +63,39 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
   - Definition of done
 
 **Template:**
+
 ```markdown
 # ROADMAP
 
 ## Project Overview
+
 [One paragraph describing what this project is]
 
 ## Phases
 
 ### Phase 0: [Foundation]
+
 **Goal:** [One sentence]
 
 #### Deliverables
+
 - [ ] Item 1
 - [ ] Item 2
 
 #### Acceptance Criteria
+
 \`\`\`bash
-./init.sh   # Completes with exit 0
-./test.sh   # Completes with exit 0
+./init.sh # Completes with exit 0
+./test.sh # Completes with exit 0
 \`\`\`
 
 #### Definition of Done
+
 - [ ] Verification 1
 - [ ] Verification 2
 
 ### Phase 1: [Next Phase]
+
 ...
 ```
 
@@ -98,6 +106,7 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 **Purpose:** Explain how the system is structured and why.
 
 **Must include:**
+
 - High-level structure (directory layout)
 - Component responsibilities
 - Data flow
@@ -106,30 +115,35 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 - Anti-patterns to avoid
 
 **Template:**
+
 ```markdown
 # ARCHITECTURE
 
 ## Overview
+
 [How the pieces fit together]
 
 ## Structure
+
 \`\`\`
 ├── src/
-│   ├── [component]/    # [responsibility]
-│   └── [component]/    # [responsibility]
+│ ├── [component]/ # [responsibility]
+│ └── [component]/ # [responsibility]
 └── ...
 \`\`\`
 
 ## Key Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| [Area] | [Choice] | [Why] |
+| Decision | Choice   | Rationale |
+| -------- | -------- | --------- |
+| [Area]   | [Choice] | [Why]     |
 
 ## Patterns
+
 [Patterns the LLM should follow]
 
 ## Anti-Patterns
+
 [Things the LLM should NOT do]
 ```
 
@@ -140,6 +154,7 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 **Purpose:** Define how code should be written.
 
 **Must include:**
+
 - Language-specific style rules
 - Naming conventions (files, functions, variables)
 - Import ordering
@@ -148,30 +163,37 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 - Git conventions
 
 **Template:**
+
 ```markdown
 # CONVENTIONS
 
 ## General Principles
+
 1. [Principle]
 2. [Principle]
 
 ## [Language] Conventions
 
 ### Naming
+
 - Files: [pattern]
 - Functions: [pattern]
 - Variables: [pattern]
 
 ### Imports
+
 [Order and grouping]
 
 ### Error Handling
+
 [Pattern to follow]
 
 ## Testing
+
 [How tests should be structured]
 
 ## Git
+
 [Commit message format, branch naming]
 ```
 
@@ -182,12 +204,14 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 **Purpose:** Detailed task breakdown for current phase.
 
 **Must include:**
+
 - Task list with checkboxes
 - Code snippets and file contents where helpful
 - Verification steps for each task
 - Final verification checklist
 
 **Template:**
+
 ```markdown
 # Phase [N]: [Name] - Task Breakdown
 
@@ -200,17 +224,21 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 ## Task [N].1: [Name]
 
 ### Description
+
 [What needs to be done]
 
 ### Files to Create/Modify
+
 - [ ] `path/to/file.ext`
 
 ### Implementation
+
 \`\`\`[language]
 [Code snippet if helpful]
 \`\`\`
 
 ### Verification
+
 \`\`\`bash
 [How to verify this task is complete]
 \`\`\`
@@ -218,6 +246,7 @@ Every LLM-enhanced project must have these documents at the root level. The LLM 
 ---
 
 ## Task [N].2: [Name]
+
 ...
 
 ---
@@ -240,10 +269,12 @@ Before marking Phase [N] complete:
 **Purpose:** Take a fresh clone to a fully working development environment.
 
 **Contract:**
+
 - Exit 0 = ready to develop
 - Exit 1 = clear error message explaining what's wrong
 
 **Must handle:**
+
 1. Check all prerequisites (languages, tools, versions)
 2. Install dependencies
 3. Setup environment (copy example configs, prompt for values)
@@ -251,6 +282,7 @@ Before marking Phase [N] complete:
 5. Verify setup is complete
 
 **Template:**
+
 ```bash
 #!/bin/bash
 set -e
@@ -307,10 +339,12 @@ echo -e "${GREEN}✅ Initialization complete!${NC}"
 **Purpose:** Verify everything works and is safe to deploy.
 
 **Contract:**
+
 - Exit 0 = safe to deploy
 - Exit 1 = do not deploy, here's what failed
 
 **Must handle:**
+
 1. Linting
 2. Type checking (if applicable)
 3. Unit tests
@@ -319,10 +353,12 @@ echo -e "${GREEN}✅ Initialization complete!${NC}"
 6. Any other verification
 
 **Flags to support:**
+
 - `--ci` - Stricter mode for CI (no prompts, fail on warnings)
 - `--quick` - Skip slow tests (for rapid development feedback)
 
 **Template:**
+
 ```bash
 #!/bin/bash
 set -e
@@ -350,7 +386,7 @@ FAILED=0
 run_check() {
     local name=$1
     local command=$2
-    
+
     echo ""
     echo "Running: $name..."
     if eval $command; then
@@ -389,14 +425,17 @@ fi
 **Purpose:** Start the complete development environment.
 
 **Contract:**
+
 - Starts all services needed for development
 - Provides clear output about what's running and where
 
 **Flags to support:**
+
 - Component-specific flags (e.g., `--web`, `--api`, `--mobile`)
 - `--all` - Everything (default)
 
 **Template:**
+
 ```bash
 #!/bin/bash
 
@@ -452,7 +491,7 @@ Be specific about scope:
 
 ```
 # Good
-"Implement Task 2.3 from PHASE_2_TASKS.md. Follow the patterns in 
+"Implement Task 2.3 from PHASE_2_TASKS.md. Follow the patterns in
 ARCHITECTURE.md for database access."
 
 # Bad
@@ -472,7 +511,7 @@ Verify before moving on:
 Update documentation:
 
 ```
-"Update PHASE_N_TASKS.md to reflect completed work. Check off 
+"Update PHASE_N_TASKS.md to reflect completed work. Check off
 finished tasks and note any blockers."
 ```
 
@@ -587,7 +626,7 @@ Document Purpose:
 
 Script Purpose:
   init.sh  → Setup    → Exit 0 = ready
-  test.sh  → Verify   → Exit 0 = safe to deploy  
+  test.sh  → Verify   → Exit 0 = safe to deploy
   run.sh   → Develop  → Starts everything
 
 Session Flow:
