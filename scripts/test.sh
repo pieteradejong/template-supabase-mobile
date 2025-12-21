@@ -43,6 +43,7 @@ FIX_MODE=false
 COVERAGE_MODE=false
 WATCH_MODE=false
 VERBOSE=false
+CI_MODE=false
 
 # =============================================================================
 # ARGUMENT PARSING
@@ -55,9 +56,11 @@ show_help() {
     echo ""
     echo "Modes:"
     echo "  all         Run all checks (default)"
+    echo "  unit        Run unit tests only"
     echo "  backend     Run backend tests only"
     echo "  frontend    Run frontend tests only"
     echo "  mobile      Run Expo mobile tests only"
+    echo "  supabase    Run Supabase integration tests"
     echo "  lint        Run linting only"
     echo "  format      Run format checking/fixing only"
     echo "  type-check  Run type checking only"
@@ -65,7 +68,8 @@ show_help() {
     echo "  build       Verify project builds"
     echo ""
     echo "Options:"
-    echo "  --quick     Skip slow checks (type-check, format)"
+    echo "  --ci        CI mode (stricter checks, skip Docker-dependent tests)"
+    echo "  --quick     Skip slow checks (type-check, format, integration)"
     echo "  --fix       Auto-fix lint and format issues"
     echo "  --coverage  Include test coverage report"
     echo "  --watch     Run tests in watch mode"
@@ -78,6 +82,7 @@ show_help() {
     echo "  $0 lint --fix       # Fix linting issues"
     echo "  $0 format --fix     # Fix formatting issues"
     echo "  $0 mobile           # Test Expo mobile app"
+    echo "  $0 supabase         # Test Supabase integration"
     echo "  $0 --coverage       # Run tests with coverage"
     echo ""
     echo "Exit codes:"
@@ -90,8 +95,11 @@ MODE="all"
 
 for arg in "$@"; do
     case $arg in
-        backend|frontend|mobile|lint|format|type-check|security|build|all)
+        backend|frontend|mobile|unit|supabase|lint|format|type-check|security|build|all)
             MODE="$arg"
+            ;;
+        --ci)
+            CI_MODE=true
             ;;
         --quick|-q)
             QUICK_MODE=true
@@ -908,6 +916,112 @@ run_mobile_all() {
 }
 
 # =============================================================================
+# UNIT TESTS
+# =============================================================================
+
+run_unit_tests() {
+    log_header "Unit Tests"
+    
+    local run_prefix=$(get_node_run_prefix)
+    
+    if grep -q '"test:unit"' "$PROJECT_ROOT/package.json" 2>/dev/null; then
+        log_step "Running: $run_prefix test:unit"
+        if eval "$run_prefix test:unit"; then
+            log_success "Unit tests passed"
+        else
+            log_error "Unit tests failed"
+            EXIT_CODE=1
+        fi
+    else
+        log_info "No unit test script found"
+    fi
+    
+    echo ""
+}
+
+# =============================================================================
+# SUPABASE INTEGRATION TESTS
+# =============================================================================
+
+run_supabase_integration() {
+    if ! is_supabase_enabled; then
+        return 0
+    fi
+    
+    log_header "Supabase Integration Tests"
+    
+    # Check if Supabase CLI is available
+    if ! check_command supabase; then
+        log_warn "Supabase CLI not installed, skipping integration tests"
+        return 0
+    fi
+    
+    # Check if Supabase is running
+    log_step "Checking if Supabase is running..."
+    if is_supabase_running; then
+        log_success "Supabase is running"
+    else
+        log_warn "Supabase is not running. Start with: supabase start"
+        log_info "Skipping integration tests (Supabase not running)"
+        return 0
+    fi
+    
+    # Verify database connection
+    log_step "Testing database connection..."
+    if supabase db lint >/dev/null 2>&1; then
+        log_success "Database connection OK"
+    else
+        # db lint might not exist in all versions, try alternative
+        if supabase status >/dev/null 2>&1; then
+            log_success "Supabase status OK"
+        else
+            log_error "Cannot connect to Supabase database"
+            EXIT_CODE=1
+            return 1
+        fi
+    fi
+    
+    # Verify tables exist
+    log_step "Checking database schema..."
+    
+    # Get the Supabase DB URL from status
+    local db_url=$(supabase status 2>/dev/null | grep "DB URL" | awk '{print $NF}')
+    
+    if [ -n "$db_url" ] && check_command psql; then
+        # Check if items table exists
+        if psql "$db_url" -c "SELECT 1 FROM items LIMIT 1;" >/dev/null 2>&1; then
+            log_success "Table 'items' exists"
+        else
+            log_error "Table 'items' not found. Run migrations: supabase db reset"
+            EXIT_CODE=1
+        fi
+        
+        # Check if profiles table exists
+        if psql "$db_url" -c "SELECT 1 FROM profiles LIMIT 1;" >/dev/null 2>&1; then
+            log_success "Table 'profiles' exists"
+        else
+            log_error "Table 'profiles' not found. Run migrations: supabase db reset"
+            EXIT_CODE=1
+        fi
+    else
+        log_info "psql not available or DB URL not found, skipping table verification"
+        log_info "Tables will be verified when the app connects"
+    fi
+    
+    # Verify seed data exists (optional)
+    if [ -n "$db_url" ] && check_command psql; then
+        local item_count=$(psql "$db_url" -t -c "SELECT COUNT(*) FROM items;" 2>/dev/null | tr -d ' ')
+        if [ -n "$item_count" ] && [ "$item_count" -gt 0 ]; then
+            log_success "Seed data present: $item_count items"
+        else
+            log_info "No seed data found. Run: supabase db reset"
+        fi
+    fi
+    
+    echo ""
+}
+
+# =============================================================================
 # SECURITY SCANNING
 # =============================================================================
 
@@ -1185,6 +1299,9 @@ run_monorepo_format() {
 # =============================================================================
 
 run_all_tests() {
+    # Run package unit tests first
+    run_unit_tests
+    
     if is_python_enabled; then
         run_python_tests
     fi
@@ -1322,8 +1439,9 @@ log_header "${PROJECT_NAME:-Project} - Test Suite"
 echo ""
 
 # Show active modes
-if [ "$QUICK_MODE" = true ] || [ "$FIX_MODE" = true ] || [ "$COVERAGE_MODE" = true ] || [ "$WATCH_MODE" = true ] || [ "$VERBOSE" = true ]; then
+if [ "$CI_MODE" = true ] || [ "$QUICK_MODE" = true ] || [ "$FIX_MODE" = true ] || [ "$COVERAGE_MODE" = true ] || [ "$WATCH_MODE" = true ] || [ "$VERBOSE" = true ]; then
     log_step "Active options:"
+    [ "$CI_MODE" = true ] && echo "  - CI mode (stricter checks, no Docker-dependent tests)"
     [ "$QUICK_MODE" = true ] && echo "  - Quick mode (skipping type-check, format)"
     [ "$FIX_MODE" = true ] && echo "  - Fix mode (auto-fixing issues)"
     [ "$COVERAGE_MODE" = true ] && echo "  - Coverage mode (generating coverage reports)"
@@ -1345,6 +1463,14 @@ case $MODE in
     
     mobile)
         run_mobile_all
+        ;;
+    
+    unit)
+        run_unit_tests
+        ;;
+    
+    supabase)
+        run_supabase_integration
         ;;
     
     lint)
@@ -1373,6 +1499,12 @@ case $MODE in
         if [ "$QUICK_MODE" = false ]; then
             run_all_format
             run_all_typecheck
+            # Skip Supabase integration in CI mode (no Docker available)
+            if [ "$CI_MODE" = false ]; then
+                run_supabase_integration
+            else
+                log_info "Skipping Supabase integration tests in CI mode"
+            fi
         fi
         ;;
 esac

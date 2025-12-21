@@ -4,11 +4,13 @@
   "scripts": {
     "dev": "./scripts/run.sh",
     "test": "./scripts/test.sh",
+    "test:unit": "vitest run",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "gen:types": "supabase gen types typescript --local > packages/types/src/database.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -19,7 +21,8 @@
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.0"
   },
   "engines": {
     "node": ">=18",

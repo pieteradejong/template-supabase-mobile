@@ -53,7 +53,8 @@ show_help() {
     echo "  all         Start all detected services (default)"
     echo "  backend     Start only backend services (Python, Rust, Go)"
     echo "  frontend    Start only frontend services (Node.js)"
-    echo "  mobile      Start only Expo mobile app"
+    echo "  mobile      Start only Expo mobile app (starts Supabase first)"
+    echo "  supabase    Start only local Supabase"
     echo "  docker      Start with Docker Compose"
     echo ""
     echo "Options:"
@@ -69,7 +70,7 @@ MODE="all"
 
 for arg in "$@"; do
     case $arg in
-        backend|frontend|mobile|all|docker)
+        backend|frontend|mobile|supabase|all|docker)
             MODE="$arg"
             ;;
         --help|-h)
@@ -303,6 +304,71 @@ start_expo_mobile() {
 }
 
 # =============================================================================
+# SUPABASE STARTER
+# =============================================================================
+
+ensure_supabase_running() {
+    if ! is_supabase_enabled; then
+        return 0
+    fi
+    
+    if ! check_command supabase; then
+        log_warn "Supabase CLI not installed, skipping Supabase startup"
+        return 1
+    fi
+    
+    if ! check_command docker; then
+        log_warn "Docker not installed, skipping Supabase startup"
+        return 1
+    fi
+    
+    if ! docker info >/dev/null 2>&1; then
+        log_warn "Docker is not running, skipping Supabase startup"
+        return 1
+    fi
+    
+    if is_supabase_running; then
+        log_success "Supabase is already running"
+        return 0
+    fi
+    
+    log_step "Starting Supabase..."
+    cd "$PROJECT_ROOT"
+    supabase start
+    
+    if is_supabase_running; then
+        log_success "Supabase started"
+        echo "  API:    http://127.0.0.1:54321"
+        echo "  Studio: http://127.0.0.1:54323"
+        return 0
+    else
+        log_error "Failed to start Supabase"
+        return 1
+    fi
+}
+
+start_supabase_only() {
+    if ! is_supabase_enabled; then
+        log_error "No Supabase configuration found"
+        log_info "Expected: supabase/config.toml"
+        exit 1
+    fi
+    
+    ensure_supabase_running
+    
+    echo ""
+    log_success "Supabase is running"
+    echo ""
+    echo "Services:"
+    echo "  API URL:     http://127.0.0.1:54321"
+    echo "  Studio:      http://127.0.0.1:54323"
+    echo "  Inbucket:    http://127.0.0.1:54324"
+    echo ""
+    echo "Run 'supabase status' to see all service URLs and credentials"
+    echo "Run 'supabase stop' to stop Supabase"
+}
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -351,12 +417,21 @@ case $MODE in
     
     mobile)
         if is_expo_enabled; then
+            # Ensure Supabase is running before starting mobile
+            if is_supabase_enabled; then
+                ensure_supabase_running || log_warn "Supabase not started, continuing anyway..."
+                echo ""
+            fi
             start_expo_mobile
         else
             log_error "No Expo mobile app detected"
             log_info "Expected: apps/mobile/app.json"
             exit 1
         fi
+        ;;
+    
+    supabase)
+        start_supabase_only
         ;;
     
     all|*)

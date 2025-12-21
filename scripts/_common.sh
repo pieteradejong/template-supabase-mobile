@@ -137,6 +137,11 @@ detect_expo() {
     [ -d "$PROJECT_ROOT/apps/mobile" ] && [ -f "$PROJECT_ROOT/apps/mobile/app.json" ]
 }
 
+# Detect Supabase project
+detect_supabase() {
+    [ -d "$PROJECT_ROOT/supabase" ] && [ -f "$PROJECT_ROOT/supabase/config.toml" ]
+}
+
 # =============================================================================
 # STACK ENABLED CHECKS (respects config overrides)
 # =============================================================================
@@ -189,12 +194,56 @@ is_expo_enabled() {
     esac
 }
 
+is_supabase_enabled() {
+    case "${ENABLE_SUPABASE:-auto}" in
+        true) return 0 ;;
+        false) return 1 ;;
+        auto|*) detect_supabase ;;
+    esac
+}
+
 # Get Expo mobile directory
 get_expo_dir() {
     if [ -n "${EXPO_DIR:-}" ]; then
         echo "$PROJECT_ROOT/$EXPO_DIR"
     else
         echo "$PROJECT_ROOT/apps/mobile"
+    fi
+}
+
+# Get Supabase directory
+get_supabase_dir() {
+    if [ -n "${SUPABASE_DIR:-}" ]; then
+        echo "$PROJECT_ROOT/$SUPABASE_DIR"
+    else
+        echo "$PROJECT_ROOT/supabase"
+    fi
+}
+
+# Check if Supabase is running
+is_supabase_running() {
+    if check_command supabase; then
+        supabase status >/dev/null 2>&1
+        return $?
+    fi
+    return 1
+}
+
+# Start Supabase if not running
+start_supabase() {
+    if ! is_supabase_running; then
+        log_step "Starting Supabase..."
+        supabase start
+    else
+        log_info "Supabase is already running"
+    fi
+}
+
+# Stop Supabase
+stop_supabase() {
+    if is_supabase_running; then
+        log_step "Stopping Supabase..."
+        supabase stop
     fi
 }
 
@@ -337,6 +386,11 @@ print_detected_stacks() {
     
     if is_expo_enabled; then
         echo "  - Expo Mobile ($(get_expo_dir))"
+        found=true
+    fi
+    
+    if is_supabase_enabled; then
+        echo "  - Supabase ($(get_supabase_dir))"
         found=true
     fi
     
