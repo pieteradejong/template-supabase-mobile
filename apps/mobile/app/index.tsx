@@ -16,6 +16,33 @@ const log = createLogger("HomeScreen");
 
 type Item = Tables<"items">;
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  // Supabase errors (PostgrestError, AuthError) commonly have a string `message`
+  if (typeof err === "object" && err !== null && "message" in err) {
+    const maybeMessage = (err as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage.trim().length > 0) {
+      // Common misconfiguration: SUPABASE_URL points at the Supabase dashboard
+      // instead of the project API URL (https://<ref>.supabase.co).
+      if (
+        maybeMessage.includes("<!DOCTYPE html") &&
+        (maybeMessage.includes("Supabase Studio") ||
+          maybeMessage.includes("/dashboard/") ||
+          maybeMessage.includes("We couldn't find the page"))
+      ) {
+        return "Your Supabase URL looks wrong (it points to the dashboard). Set EXPO_PUBLIC_SUPABASE_URL to your Project URL like: https://<project-ref>.supabase.co";
+      }
+
+      return maybeMessage;
+    }
+  }
+
+  return "Failed to fetch items";
+}
+
 export default function HomeScreen() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +66,11 @@ export default function HomeScreen() {
       setItems(data ?? []);
       setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to fetch items";
-      log.error("Error fetching items", { error: message });
+      const message = getErrorMessage(err);
+      log.error(
+        "Error fetching items",
+        err instanceof Error ? err : { error: err, resolvedMessage: message }
+      );
       setError(message);
     } finally {
       setLoading(false);
@@ -73,7 +103,10 @@ export default function HomeScreen() {
         <Text style={styles.errorTitle}>Connection Error</Text>
         <Text style={styles.errorText}>{error}</Text>
         <Text style={styles.hint}>
-          Make sure Supabase is running:{"\n"}
+          Check your Supabase config:{"\n"}
+          - EXPO_PUBLIC_SUPABASE_URL{"\n"}
+          - EXPO_PUBLIC_SUPABASE_ANON_KEY{"\n\n"}
+          If you are using local Supabase:{"\n"}
           supabase start
         </Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchItems}>

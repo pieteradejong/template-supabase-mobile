@@ -10,6 +10,10 @@ function getSupabaseUrl(): string {
 
   if (!url) {
     console.warn("Supabase URL not configured. Set EXPO_PUBLIC_SUPABASE_URL or SUPABASE_URL.");
+  } else if (url.includes("supabase.com/dashboard") || url.startsWith("https://supabase.com")) {
+    console.warn(
+      "Supabase URL looks like a dashboard URL. Use your project API URL (Project URL) like: https://<project-ref>.supabase.co"
+    );
   }
 
   return url;

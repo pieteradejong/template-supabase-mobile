@@ -1,10 +1,9 @@
-# ROADMAP: Supabase + React + React Native Template
+# ROADMAP: Supabase Mobile Template
 
 ## Project Overview
 
-A production-ready GitHub template combining:
+A production-ready GitHub template for mobile apps:
 
-- **Web**: Vite + React + Tailwind
 - **Mobile**: Expo (managed workflow) targeting iOS and Android
 - **Backend**: Supabase (Auth, Database, Realtime, Storage, Edge Functions)
 - **Monorepo**: pnpm workspaces with shared packages
@@ -24,7 +23,6 @@ A production-ready GitHub template combining:
 
 ```
 ├── apps/
-│   ├── web/                    # Vite + React + Tailwind
 │   └── mobile/                 # Expo (iOS + Android)
 │
 ├── packages/
@@ -35,7 +33,7 @@ A production-ready GitHub template combining:
 ├── supabase/
 │   ├── migrations/             # SQL migrations
 │   ├── seed.sql                # Example seed data
-│   └── functions/              # Edge functions
+│   └── functions/              # Edge functions (future)
 │
 ├── .github/
 │   └── workflows/              # CI/CD (GitHub Actions)
@@ -46,28 +44,27 @@ A production-ready GitHub template combining:
 │   └── run.sh                  # Start dev environment
 │
 ├── pnpm-workspace.yaml
-├── tsconfig.base.json
 └── README.md
 ```
 
 ---
 
-## Phase 0: Project Foundation
+## Phase 0: Project Foundation ✅
 
-**Goal:** Empty monorepo with working init/test/run scripts
+**Goal:** Mobile-only monorepo with working init/test/run scripts
 
 ### Deliverables
 
-- [ ] Monorepo structure with pnpm workspaces
-- [ ] Shared TypeScript config (`tsconfig.base.json`)
-- [ ] Shared ESLint + Prettier config
-- [ ] Empty Vite app (displays "Hello World")
-- [ ] Empty Expo app (displays "Hello World")
-- [ ] `init.sh` script
-- [ ] `test.sh` script
-- [ ] `run.sh` script
-- [ ] GitHub Actions workflow calling `test.sh --ci`
-- [ ] README with setup instructions
+- [x] Monorepo structure with pnpm workspaces
+- [x] Shared ESLint + Prettier config
+- [x] Expo mobile app (displays "Hello World")
+- [x] Shared packages (supabase, types, utils)
+- [x] `init.sh` script
+- [x] `test.sh` script
+- [x] `run.sh` script
+- [x] Local Supabase setup with migrations
+- [x] GitHub Actions workflow calling `test.sh --ci`
+- [x] README with setup instructions
 
 ### Script Specifications
 
@@ -144,19 +141,17 @@ set -e
 
 ```bash
 git clone <repo>
-./init.sh           # Completes with exit 0
+./init.sh           # Completes with exit 0 (requires Docker)
 ./test.sh           # Completes with exit 0
-./run.sh            # Both apps accessible at localhost
-./run.sh --web      # Only web app starts
-./run.sh --mobile   # Only mobile app starts
+./run.sh mobile     # Mobile app accessible via Expo Go
 ```
 
 ### Definition of Done
 
-- [ ] A new developer can clone and have both apps running in under 5 minutes
-- [ ] CI pipeline passes on GitHub Actions
-- [ ] No TypeScript errors
-- [ ] No ESLint errors
+- [x] A new developer can clone and have mobile app running in under 5 minutes
+- [x] CI pipeline passes on GitHub Actions
+- [x] No TypeScript errors
+- [x] No ESLint errors
 
 ---
 
@@ -173,7 +168,7 @@ git clone <repo>
 - [ ] Example migration: `items` table (generic CRUD example)
 - [ ] `seed.sql` with example data
 - [ ] Env validation (fail fast if vars missing)
-- [ ] Both apps fetch and display data from Supabase
+- [ ] Mobile app fetches and displays data from Supabase
 - [ ] Update `init.sh` to run migrations and seed
 - [ ] Update `test.sh` with integration tests
 
@@ -212,7 +207,7 @@ CREATE TABLE items (
 
 ### Definition of Done
 
-- [ ] Both apps show data from Supabase
+- [ ] Mobile app shows data from Supabase
 - [ ] Types are generated and match the schema
 - [ ] Type generation runs in CI
 - [ ] Changing schema and regenerating types works smoothly
@@ -227,13 +222,11 @@ CREATE TABLE items (
 
 - [ ] Magic link auth (primary method)
 - [ ] Email/password auth (secondary option)
-- [ ] Secure token storage:
-  - Web: localStorage (with XSS considerations documented)
-  - Mobile: Expo SecureStore
+- [ ] Secure token storage with Expo SecureStore
 - [ ] Shared auth hooks in `packages/supabase`
 - [ ] Auth state management (React context)
-- [ ] Protected route/screen example (requires auth)
-- [ ] Unprotected route/screen example (public)
+- [ ] Protected screen example (requires auth)
+- [ ] Unprotected screen example (public)
 - [ ] RLS policies:
   - `profiles`: users can only read/write own profile
   - `items`: users can only CRUD own items
@@ -269,10 +262,9 @@ export function useAuth() {
 
 ### Definition of Done
 
-- [ ] Full auth flow works on web
 - [ ] Full auth flow works on mobile (iOS and Android)
-- [ ] Tokens stored securely per platform
-- [ ] Can't access protected content without auth
+- [ ] Tokens stored securely with Expo SecureStore
+- [ ] Can't access protected screens without auth
 - [ ] RLS prevents cross-user data access
 
 ---
@@ -283,19 +275,13 @@ export function useAuth() {
 
 ### Deliverables
 
-- [ ] Security headers (web):
-  - Content-Security-Policy
-  - Strict-Transport-Security
-  - X-Content-Type-Options
-  - X-Frame-Options
-  - Referrer-Policy
-- [ ] CORS configuration (locked to specific origins)
 - [ ] Zod validation schemas in `packages/utils`
-- [ ] Input validation examples in both apps
+- [ ] Input validation examples in mobile app
 - [ ] Environment variable separation (dev/staging/prod)
 - [ ] `pnpm audit` in CI (fail on high/critical)
 - [ ] Dependabot configuration
 - [ ] Security documentation/checklist
+- [ ] Secure storage best practices documented
 
 ### Zod Validation Examples
 
@@ -362,13 +348,13 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 #### Realtime
 
 - [ ] Realtime subscription hook
-- [ ] Example: items table changes reflected live in both apps
+- [ ] Example: items table changes reflected live in mobile app
 - [ ] Proper cleanup on unmount
 
 #### Storage
 
 - [ ] Storage bucket setup (with RLS)
-- [ ] Upload file example (both apps)
+- [ ] Upload file example (mobile app)
 - [ ] Download/display file example
 - [ ] File deletion example
 
@@ -424,7 +410,7 @@ serve(async (req) => {
 ### Definition of Done
 
 - [ ] All Supabase features demonstrated
-- [ ] All features work on both web and mobile
+- [ ] All features work on mobile (iOS and Android)
 - [ ] All features have tests
 
 ---
@@ -612,8 +598,7 @@ interface HealthResponse {
 
 ### Definition of Done
 
-- [ ] All apps use shared logger
-- [ ] Health endpoints work on web
+- [ ] Mobile app uses shared logger
 - [ ] Health checks integrated into CI
 - [ ] LOGGING.md documents all patterns
 
@@ -623,9 +608,7 @@ interface HealthResponse {
 
 | Decision         | Choice               | Rationale                                  |
 | ---------------- | -------------------- | ------------------------------------------ |
-| Web framework    | Vite + React         | Fast, simple, well-supported               |
 | Mobile framework | Expo (managed)       | Easier cross-platform, EAS for builds      |
-| Styling          | Tailwind CSS         | Utility-first, works well in both contexts |
 | Monorepo         | pnpm workspaces      | Simple, no extra tooling needed            |
 | Auth method      | Magic link (primary) | Lowest friction, no passwords              |
 | Validation       | Zod                  | Type-safe, great DX                        |

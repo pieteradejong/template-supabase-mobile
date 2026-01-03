@@ -1,15 +1,20 @@
 -- =============================================================================
--- Seed Data for Local Development
+-- Seed Data (Idempotent) for Hosted + Local Development
 -- =============================================================================
--- This file is run after migrations to populate the database with example data.
--- Run with: supabase db reset (applies migrations + seed)
+-- This migration inserts demo rows in an idempotent way.
+--
+-- Why as a migration?
+-- - `supabase db push` applies migrations to hosted projects reliably.
+-- - `supabase/seed.sql` is primarily used by `supabase db reset` for local dev.
+--
+-- Notes:
+-- - Inserts are guarded by NOT EXISTS to avoid duplicates.
+-- - This is meant for template/demo usage; adapt for real apps as needed.
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
 -- Sample items
 -- -----------------------------------------------------------------------------
-
--- Idempotent seed: insert only if an item with the same title doesn't exist.
 INSERT INTO items (title, description)
 SELECT v.title, v.description
 FROM (
@@ -36,8 +41,6 @@ WHERE NOT EXISTS (
 -- -----------------------------------------------------------------------------
 -- Sample profiles (for testing queries before auth is implemented)
 -- -----------------------------------------------------------------------------
-
--- Idempotent seed: insert only if a profile with the same display_name doesn't exist.
 INSERT INTO profiles (display_name, avatar_url)
 SELECT v.display_name, v.avatar_url
 FROM (
@@ -50,3 +53,4 @@ WHERE NOT EXISTS (
   FROM profiles p
   WHERE p.display_name = v.display_name
 );
+

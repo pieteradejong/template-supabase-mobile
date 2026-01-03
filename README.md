@@ -58,8 +58,28 @@ scripts/              # Project scripts
 ## Tech Stack
 
 - **Mobile:** Expo (React Native)
-- **Backend:** Supabase (coming soon)
+- **Backend:** Supabase (hosted or local via Supabase CLI)
 - **Language:** TypeScript
+
+## Hosted Supabase (fastest setup)
+
+1. Create a Supabase project (Dashboard).
+2. Apply schema + seed data to hosted Supabase (idempotent):
+
+```bash
+./scripts/supabase-hosted.sh --project-ref <your-project-ref>
+```
+
+3. Configure Expo env vars:
+   - Copy `apps/mobile/env.local.example` → `apps/mobile/.env.local`
+   - Fill in:
+     - `EXPO_PUBLIC_SUPABASE_URL=...`
+     - `EXPO_PUBLIC_SUPABASE_ANON_KEY=...`
+4. Start the app:
+
+```bash
+./scripts/run.sh mobile
+```
 
 ## License
 
