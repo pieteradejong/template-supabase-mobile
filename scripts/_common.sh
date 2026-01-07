@@ -137,7 +137,11 @@ detect_docker() {
 
 # Detect Expo mobile project
 detect_expo() {
-    [ -d "$PROJECT_ROOT/apps/mobile" ] && [ -f "$PROJECT_ROOT/apps/mobile/app.json" ]
+    [ -d "$PROJECT_ROOT/apps/mobile" ] && (
+        [ -f "$PROJECT_ROOT/apps/mobile/app.json" ] ||
+        [ -f "$PROJECT_ROOT/apps/mobile/app.config.ts" ] ||
+        [ -f "$PROJECT_ROOT/apps/mobile/app.config.js" ]
+    )
 }
 
 # Detect Supabase project

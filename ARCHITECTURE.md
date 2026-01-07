@@ -67,7 +67,7 @@ apps/mobile/
 ├── components/         # UI components
 ├── hooks/              # React hooks (app-specific)
 ├── lib/                # Utilities, configs
-├── app.json            # Expo config
+├── app.config.ts       # Expo config (centralized app identity)
 ├── eas.json            # EAS Build config
 └── tsconfig.json       # Extends base config
 ```

@@ -126,6 +126,17 @@ pnpm install
 
 ---
 
+## CRUD Demo
+
+The mobile app (`apps/mobile/app/index.tsx`) includes a minimal CRUD demo for the `items` table:
+
+- **Create**: Tap the "+" button in the header → modal opens → enter title (required) and description (optional) → Create.
+- **Delete**: Long-press any item card → confirm dialog → item is deleted.
+
+Both operations use optimistic UI updates (no refetch needed) and include error handling with user-friendly alerts.
+
+---
+
 ## Adding New Learnings
 
 When you discover something non-obvious:

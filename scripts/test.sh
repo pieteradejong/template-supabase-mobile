@@ -1153,6 +1153,22 @@ run_build_check() {
         cd "$expo_dir"
         
         has_builds=true
+        
+        # Verify config file exists
+        log_step "Checking Expo config file..."
+        if [ -f "app.config.ts" ]; then
+            log_success "Found app.config.ts"
+        elif [ -f "app.config.js" ]; then
+            log_success "Found app.config.js"
+        elif [ -f "app.json" ]; then
+            log_success "Found app.json"
+        else
+            log_error "No Expo config file found (app.config.ts, app.config.js, or app.json)"
+            EXIT_CODE=1
+            cd "$PROJECT_ROOT"
+            continue
+        fi
+        
         log_step "Verifying Expo app configuration..."
         
         if npx expo-doctor 2>/dev/null; then

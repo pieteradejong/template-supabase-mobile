@@ -453,7 +453,7 @@ case $MODE in
             start_expo_mobile
         else
             log_error "No Expo mobile app detected"
-            log_info "Expected: apps/mobile/app.json"
+            log_info "Expected: apps/mobile/app.json or apps/mobile/app.config.ts"
             exit 1
         fi
         ;;
