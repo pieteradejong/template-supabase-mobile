@@ -55,6 +55,40 @@ scripts/              # Project scripts
 - [LOGGING.md](LOGGING.md) - Logging standards
 - [LEARNINGS.md](LEARNINGS.md) - Gotchas and discoveries
 
+## Template customization checklist
+
+Do these steps first when starting a new app from this template.
+
+### App identity (Expo)
+
+- Update Expo app config in `apps/mobile/app.json`:
+  - `expo.name` (display name)
+  - `expo.slug` (Expo project slug)
+  - `expo.scheme` (deep link scheme)
+  - `expo.ios.bundleIdentifier` (reverse-DNS, unique)
+  - `expo.android.package` (reverse-DNS, unique)
+
+### Package namespace (optional)
+
+This template uses the placeholder scope `@acme/*` for workspace packages.
+
+- If you want to change it:
+  - Update package names in `apps/mobile/package.json` and `packages/*/package.json`
+  - Update import paths across the repo (e.g. `import { supabase } from "@acme/supabase"`)
+  - Update TS path mapping in `apps/mobile/tsconfig.json` (and other app/package tsconfigs if added)
+
+### Supabase project
+
+- Create/link a Supabase project and apply migrations:
+  - `./scripts/supabase-hosted.sh --project-ref <your-project-ref>`
+- Set Expo env vars in `apps/mobile/.env.local`:
+  - `EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co`
+  - `EXPO_PUBLIC_SUPABASE_ANON_KEY=<publishable/anon key>`
+
+### Script metadata (optional)
+
+- Set a friendly name for script output by uncommenting `PROJECT_NAME` in `scripts/project.conf`.
+
 ## Tech Stack
 
 - **Mobile:** Expo (React Native)

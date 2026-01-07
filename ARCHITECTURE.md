@@ -163,14 +163,38 @@ packages/utils/
 ```
 supabase/
 ├── migrations/         # SQL migrations (ordered by timestamp)
-│   ├── 00001_initial.sql
-│   └── 00002_rls_policies.sql
+│   ├── 00001_initial_schema.sql
+│   └── 00002_seed_dev_data.sql
 ├── functions/          # Edge functions
 │   └── example/
 │       └── index.ts
-├── seed.sql            # Development seed data
+├── seed.sql            # Local seed data (used by `supabase db reset`)
 └── config.toml         # Local Supabase config
 ```
+
+### Hosted vs Local Supabase
+
+We support two development modes:
+
+- **Hosted Supabase (recommended for simplest start)**:
+  - Apply migrations to hosted project with `supabase db push` (idempotent).
+  - Use `./scripts/supabase-hosted.sh --project-ref <ref>` to link and push.
+  - Configure Expo with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+
+- **Local Supabase (Docker)**:
+  - Start services with `supabase start`.
+  - Reset local DB (migrations + seed) with `supabase db reset`.
+
+### Environment Variables (Expo)
+
+For Expo clients, use public env vars:
+
+- `EXPO_PUBLIC_SUPABASE_URL` (Project URL: `https://<project-ref>.supabase.co`)
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` (publishable/anon key)
+
+The developer scripts load env vars from **one canonical secrets file**:
+
+- `apps/mobile/.env.local`
 
 ### Migration Conventions
 
@@ -178,6 +202,11 @@ supabase/
 - One migration per logical change
 - Include both UP and DOWN when possible (as comments)
 - Always enable RLS immediately after creating a table
+
+### Seed Data Strategy
+
+- **Hosted**: seed via a migration (`supabase/migrations/00002_seed_dev_data.sql`) so `supabase db push` applies it predictably.
+- **Local**: keep `supabase/seed.sql` for `supabase db reset` (also idempotent).
 
 ### Row-Level Security (RLS) Pattern
 

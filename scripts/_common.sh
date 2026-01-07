@@ -342,6 +342,82 @@ get_node_run_prefix() {
 # CONFIGURATION LOADING
 # =============================================================================
 
+# -----------------------------------------------------------------------------
+# Environment loading (single source of truth)
+# -----------------------------------------------------------------------------
+#
+# This template uses exactly one secrets file:
+#   apps/mobile/.env.local
+#
+# Fill it once and everything (scripts + Expo app) should work.
+#
+
+# Get canonical Expo env file path
+get_expo_env_file() {
+    echo "$(get_expo_dir)/.env.local"
+}
+
+# Load Expo env file (KEY=VALUE lines). Returns 0 if loaded, 1 if missing.
+load_expo_env() {
+    local env_file
+    env_file="$(get_expo_env_file)"
+
+    if [ -f "$env_file" ]; then
+        # shellcheck disable=SC1090
+        set -a
+        source "$env_file"
+        set +a
+        return 0
+    fi
+
+    return 1
+}
+
+# Require the Expo env file to exist, otherwise exit with a helpful message.
+require_expo_env_file() {
+    local env_file
+    env_file="$(get_expo_env_file)"
+
+    if [ ! -f "$env_file" ]; then
+        log_error "Missing secrets file: $env_file"
+        echo ""
+        echo "Create it from the example:"
+        echo "  cp \"$(get_expo_dir)/env.local.example\" \"$env_file\""
+        echo ""
+        echo "Then set at minimum:"
+        echo "  EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co"
+        echo "  EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon key>"
+        echo ""
+        return 1
+    fi
+
+    return 0
+}
+
+# Ensure required Supabase env vars exist and are not placeholders.
+require_supabase_public_env() {
+    local url="${EXPO_PUBLIC_SUPABASE_URL:-${SUPABASE_URL:-}}"
+    local anon_key="${EXPO_PUBLIC_SUPABASE_ANON_KEY:-${SUPABASE_ANON_KEY:-}}"
+
+    if [ -z "$url" ] || [ "$url" = "__REPLACE_ME__" ]; then
+        log_error "Missing EXPO_PUBLIC_SUPABASE_URL in $(get_expo_env_file)"
+        return 1
+    fi
+
+    if [ -z "$anon_key" ] || [ "$anon_key" = "__REPLACE_ME__" ]; then
+        log_error "Missing EXPO_PUBLIC_SUPABASE_ANON_KEY in $(get_expo_env_file)"
+        return 1
+    fi
+
+    # Guard against copying the dashboard URL instead of the project API URL.
+    if echo "$url" | grep -q "supabase.com/dashboard" || echo "$url" | grep -q "^https://supabase.com"; then
+        log_error "EXPO_PUBLIC_SUPABASE_URL looks like a dashboard URL. Use: https://<project-ref>.supabase.co"
+        return 1
+    fi
+
+    return 0
+}
+
 # Load project.conf if it exists
 load_config() {
     local config_file="$COMMON_DIR/project.conf"

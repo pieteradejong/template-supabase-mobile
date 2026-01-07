@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Mobile App",
-    "slug": "mobile-app",
+    "name": "Template App",
+    "slug": "template-app",
     "version": "1.0.0",
-    "scheme": "myapp",
+    "scheme": "template",
     "platforms": ["ios", "android"],
     "ios": {
-      "bundleIdentifier": "com.acme.mobile",
+      "bundleIdentifier": "com.example.app",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.acme.mobile",
+      "package": "com.example.app",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       }

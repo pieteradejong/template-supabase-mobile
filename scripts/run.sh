@@ -290,30 +290,11 @@ start_expo_mobile() {
     cd "$expo_dir"
 
     # Load env vars for Expo process (so process.env has Supabase creds).
-    # We support both `.env.local` (recommended) and `env.local` (common mistake).
-    local expo_env_local="$expo_dir/.env.local"
-    local expo_env_local_alt="$expo_dir/env.local"
-    local root_env_local="$PROJECT_ROOT/.env.local"
-
-    if [ -f "$expo_env_local" ]; then
-        log_info "Loading env: $expo_env_local"
-        # shellcheck disable=SC1090
-        set -a
-        source "$expo_env_local"
-        set +a
-    elif [ -f "$expo_env_local_alt" ]; then
-        log_info "Loading env: $expo_env_local_alt"
-        # shellcheck disable=SC1090
-        set -a
-        source "$expo_env_local_alt"
-        set +a
-    elif [ -f "$root_env_local" ]; then
-        log_info "Loading env: $root_env_local"
-        # shellcheck disable=SC1090
-        set -a
-        source "$root_env_local"
-        set +a
-    fi
+    # Canonical secrets file: apps/mobile/.env.local (no fallbacks).
+    require_expo_env_file || exit 1
+    log_info "Loading env: $(get_expo_env_file)"
+    load_expo_env || exit 1
+    require_supabase_public_env || exit 1
     
     # Determine run command
     local run_cmd=""
@@ -343,23 +324,17 @@ ensure_supabase_running() {
     #
     # We try to load Expo env file so this works without exporting variables.
     if is_expo_enabled; then
-        local expo_env_local="$(get_expo_dir)/.env.local"
-        if [ -f "$expo_env_local" ]; then
-            # shellcheck disable=SC1090
-            set -a
-            source "$expo_env_local"
-            set +a
-        fi
+        load_expo_env || true
     fi
 
-    local configured_url="${EXPO_PUBLIC_SUPABASE_URL:-${SUPABASE_URL:-}}"
+    local configured_url="${EXPO_PUBLIC_SUPABASE_URL:-}"
     if [ -n "$configured_url" ]; then
         case "$configured_url" in
             *127.0.0.1*|*localhost*)
                 # Local Supabase expected, continue
                 ;;
             *)
-                log_success "Hosted Supabase detected (SUPABASE_URL is not localhost). Skipping local Supabase startup."
+                log_success "Hosted Supabase detected (EXPO_PUBLIC_SUPABASE_URL is not localhost). Skipping local Supabase startup."
                 return 0
                 ;;
         esac

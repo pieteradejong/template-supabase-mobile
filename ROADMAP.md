@@ -19,6 +19,42 @@ A production-ready GitHub template for mobile apps:
 
 ---
 
+## Next Up: Template Hardening (Recommended)
+
+These are template-first tasks that make this repo more reusable across dozens of future projects.
+
+### Template Hygiene
+
+- [ ] Remove/centralize project-specific strings (app name, bundle identifiers, scheme, package names) so new projects can rename safely.
+- [ ] Add a "Template customization checklist" to `README.md` (exact strings to search/replace).
+
+### Hosted Supabase Onboarding (1-command)
+
+- [ ] Extend `./scripts/init.sh` to support hosted Supabase setup (e.g. `--project-ref <ref>` that runs `./scripts/supabase-hosted.sh`).
+- [ ] Add `pnpm` script aliases (e.g. `pnpm supabase:hosted`) for quick access.
+
+### Minimal CRUD Demo (No Auth)
+
+- [ ] Add a create item button (insert into `items`) in the mobile app.
+- [ ] Add delete interaction (e.g. long-press or swipe-to-delete).
+- [ ] Keep schema permissive for Phase 1; tighten with RLS in Phase 2 (auth).
+
+### Template Guardrails
+
+- [ ] Enforce **one canonical secrets file**: `apps/mobile/.env.local` (copy from `apps/mobile/env.local.example`).
+- [ ] Scripts must load secrets from `apps/mobile/.env.local` only (no fallbacks) and fail fast when missing or placeholders are present.
+- [ ] Add CI checks to prevent common misconfigurations:
+  - [ ] Fail if `EXPO_PUBLIC_SUPABASE_URL` is a dashboard URL instead of project URL.
+  - [ ] Ensure `apps/mobile/.env.local` (and any other env files) are never committed.
+- [ ] Update docs to reflect the single-file secrets setup (no fallbacks).
+
+### Phase 2 Prep (Auth-ready without implementing auth)
+
+- [ ] Decide whether Phase 1 `profiles.id` should already reference `auth.users(id)` (or keep standalone until Phase 2 migration).
+- [ ] Add a short "Auth migration plan" note (what changes to `profiles`, and which RLS policies become user-scoped).
+
+---
+
 ## Project Structure
 
 ```
@@ -86,8 +122,8 @@ set -e
 #    pnpm install
 
 # 3. Setup environment
-#    - Copy .env.example to .env.local if not exists
-#    - Prompt for values or use defaults for local dev
+#    - Copy apps/mobile/env.local.example → apps/mobile/.env.local if not exists
+#    - Fail fast if required vars are missing (tell user exactly what to set)
 
 # 4. Initialize Supabase (later phases)
 #    - Start local Supabase
@@ -617,12 +653,13 @@ interface HealthResponse {
 ## Appendix B: Environment Variables
 
 ```bash
-# .env.example
+# apps/mobile/.env.local
 
 # Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Never expose to client
+EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon key> # Public/publishable; safe for client
+
+# NEVER put service role key in the client app
 
 # App
 APP_ENV=development  # development | staging | production

@@ -68,6 +68,64 @@ log.error("Something broke", error);
 
 ---
 
+## Supabase URL Misconfiguration (HTML / 404 response)
+
+**Problem:** The app fails to fetch data and the error contains HTML (often a Supabase Studio 404 page).
+
+**Cause:** `EXPO_PUBLIC_SUPABASE_URL` is pointing at the Supabase dashboard (`https://supabase.com/...`) instead of the project API URL.
+
+**Solution:** Set `EXPO_PUBLIC_SUPABASE_URL` to the **Project URL**:
+
+- Format: `https://<project-ref>.supabase.co`
+- Example: `https://wbtwkqezastyccdowgpl.supabase.co`
+
+Also ensure `EXPO_PUBLIC_SUPABASE_ANON_KEY` is the **publishable/anon key**, not a secret key.
+
+---
+
+## Expo env file name gotcha
+
+**Problem:** Env vars appear “not loaded” when running via scripts.
+
+**Cause:** Secrets file is missing or named incorrectly.
+
+**Solution:** This template uses **one canonical secrets file**:
+
+- `apps/mobile/.env.local`
+
+Create it from the example:
+
+```bash
+cp apps/mobile/env.local.example apps/mobile/.env.local
+```
+
+Then set:
+
+- `EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon key>`
+
+We intentionally **do not** support `apps/mobile/env.local` or root `.env.local`:
+
+- **One source of truth**: scripts + Expo read the same file, so there’s nothing to “sync”.
+- **Less confusion**: avoids “it works in one command but not another” due to different env file locations.
+- **Safer by default**: the file is ignored by git, and we can add CI guardrails to prevent accidental commits.
+
+---
+
+## Test failures: vitest/eslint not found
+
+**Problem:** `./scripts/test.sh --quick` fails with `vitest: command not found` or `eslint: command not found`.
+
+**Cause:** Workspace dependencies haven’t been installed yet.
+
+**Solution:** Run:
+
+```bash
+pnpm install
+```
+
+---
+
 ## Adding New Learnings
 
 When you discover something non-obvious:
