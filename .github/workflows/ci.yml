@@ -26,7 +26,16 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for tracked secrets files
+        run: |
+          FORBIDDEN_FILES=$(git ls-files | grep -E '\.env\.local$|env\.local$|\.env$' || true)
+          if [ -n "$FORBIDDEN_FILES" ]; then
+            echo "::error::Secrets files should never be committed to git:"
+            echo "$FORBIDDEN_FILES"
+            exit 1
+          fi
 
       - name: Run tests
         run: ./scripts/test.sh --ci
