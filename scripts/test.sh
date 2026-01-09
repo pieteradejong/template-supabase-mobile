@@ -950,14 +950,65 @@ run_supabase_integration() {
     
     log_header "Supabase Integration Tests"
     
+    # Detect if this is a hosted Supabase setup
+    local is_hosted=false
+    if is_expo_enabled; then
+        load_expo_env || true
+        local configured_url="${EXPO_PUBLIC_SUPABASE_URL:-}"
+        if [ -n "$configured_url" ]; then
+            case "$configured_url" in
+                *127.0.0.1*|*localhost*)
+                    # Local Supabase
+                    is_hosted=false
+                    ;;
+                *)
+                    # Hosted Supabase
+                    is_hosted=true
+                    ;;
+            esac
+        fi
+    fi
+    
+    # Validate environment configuration
+    if is_expo_enabled; then
+        log_step "Validating Expo environment configuration..."
+        local env_file="$(get_expo_env_file)"
+        
+        if [ ! -f "$env_file" ]; then
+            log_warn "Expo env file not found: $env_file"
+            log_info "Create it from: $(get_expo_dir)/env.local.example"
+            log_info "Skipping Supabase integration tests (env file missing)"
+            return 0
+        fi
+        
+        # Validate env vars (checks for placeholders and dashboard URLs)
+        if require_supabase_public_env; then
+            log_success "Expo environment configuration valid"
+        else
+            log_error "Expo environment configuration invalid"
+            EXIT_CODE=1
+            return 1
+        fi
+        echo ""
+    fi
+    
+    # If hosted, skip local Supabase checks
+    if [ "$is_hosted" = true ]; then
+        log_info "Hosted Supabase detected, skipping local Supabase checks"
+        log_info "To test local Supabase, set EXPO_PUBLIC_SUPABASE_URL to localhost"
+        echo ""
+        return 0
+    fi
+    
+    # Local Supabase checks below
     # Check if Supabase CLI is available
     if ! check_command supabase; then
-        log_warn "Supabase CLI not installed, skipping integration tests"
+        log_warn "Supabase CLI not installed, skipping local Supabase integration tests"
         return 0
     fi
     
     # Check if Supabase is running
-    log_step "Checking if Supabase is running..."
+    log_step "Checking if local Supabase is running..."
     if is_supabase_running; then
         log_success "Supabase is running"
     else

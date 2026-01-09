@@ -10,7 +10,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
-    "gen:types": "supabase gen types typescript --local > packages/types/src/database.ts"
+    "gen:types": "supabase gen types typescript --local > packages/types/src/database.ts",
+    "supabase:hosted": "./scripts/supabase-hosted.sh",
+    "supabase:link": "supabase link",
+    "supabase:push": "supabase db push",
+    "supabase:status": "supabase status"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

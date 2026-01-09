@@ -24,6 +24,7 @@ source "$SCRIPT_DIR/_common.sh"
 # =============================================================================
 
 SKIP_CLEAN=false
+PROJECT_REF=""
 
 show_help() {
     echo "Usage: $0 [OPTIONS]"
@@ -31,18 +32,29 @@ show_help() {
     echo "Initialize the project development environment."
     echo ""
     echo "Options:"
-    echo "  --no-clean    Skip cleanup of existing artifacts"
-    echo "  --help        Show this help message"
+    echo "  --project-ref <ref>  Setup hosted Supabase (links project, applies migrations)"
+    echo "  --no-clean           Skip cleanup of existing artifacts"
+    echo "  --help               Show this help message"
     echo ""
     echo "This script will:"
     echo "  1. Detect project stacks (Python, Node.js, Rust, Go, Docker)"
     echo "  2. Clean existing build artifacts (unless --no-clean)"
     echo "  3. Install dependencies for each detected stack"
+    echo "  4. Setup Supabase (local or hosted if --project-ref provided)"
     exit 0
 }
 
-for arg in "$@"; do
-    case $arg in
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --project-ref)
+            PROJECT_REF="${2:-}"
+            if [ -z "$PROJECT_REF" ]; then
+                log_error "--project-ref requires a value"
+                show_help
+                exit 1
+            fi
+            shift 2
+            ;;
         --no-clean)
             SKIP_CLEAN=true
             shift
@@ -51,7 +63,7 @@ for arg in "$@"; do
             show_help
             ;;
         *)
-            log_error "Unknown option: $arg"
+            log_error "Unknown option: $1"
             echo "Use --help for usage information"
             exit 1
             ;;
@@ -281,32 +293,142 @@ if is_supabase_enabled; then
     log_header "Supabase Setup"
 
     # -----------------------------------------------------------------------------
-    # Hosted Supabase (no local Docker required)
+    # Hosted Supabase Setup (--project-ref provided)
     # -----------------------------------------------------------------------------
-    #
-    # If Supabase credentials are present via environment variables or an Expo env
-    # file, we treat this as a hosted Supabase setup and skip local Supabase startup.
-    #
-    # Expo convention: EXPO_PUBLIC_* variables are safe to expose to the client.
-    #
-    EXPO_ENV_LOCAL="$(get_expo_env_file)"
-    # Load canonical Expo env file if present. This helps init.sh detect hosted
-    # credentials without requiring users to export vars in their shell.
-    load_expo_env || true
-
-    HOSTED_URL="${EXPO_PUBLIC_SUPABASE_URL:-}"
-    HOSTED_ANON_KEY="${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}"
-
-    # If these are present, assume hosted (or at least "preconfigured") Supabase.
-    # Local Supabase can still be used by setting URL to localhost/127.0.0.1.
-    if [ -n "$HOSTED_URL" ] && [ -n "$HOSTED_ANON_KEY" ]; then
-        log_success "Supabase credentials detected (hosted/preconfigured). Skipping local Supabase startup."
-        echo "  URL: $HOSTED_URL"
+    if [ -n "$PROJECT_REF" ]; then
+        log_info "Hosted Supabase setup requested (project-ref: $PROJECT_REF)"
         echo ""
-        log_info "Next: ensure your hosted project has the schema + seed data:"
-        echo "  - Run: supabase/migrations/00001_initial_schema.sql"
-        echo "  - Run: supabase/seed.sql"
+
+        # Check prerequisites
+        if ! check_command supabase; then
+            log_error "Supabase CLI is not installed"
+            echo "  Install with: brew install supabase/tap/supabase"
+            echo "  Or see: https://supabase.com/docs/guides/cli"
+            exit 1
+        fi
+        log_success "Supabase CLI found"
+
+        # Link project
+        log_step "Linking to hosted Supabase project..."
+        cd "$PROJECT_ROOT"
+        if supabase link --project-ref "$PROJECT_REF" 2>/dev/null; then
+            log_success "Project linked"
+        else
+            log_error "Failed to link project. Make sure:"
+            echo "  1. You've run 'supabase login'"
+            echo "  2. The project-ref '$PROJECT_REF' is correct"
+            echo "  3. You have access to this project"
+            exit 1
+        fi
         echo ""
+
+        # Apply migrations
+        log_step "Applying migrations to hosted project..."
+        if supabase db push; then
+            log_success "Migrations applied"
+        else
+            log_error "Failed to apply migrations"
+            exit 1
+        fi
+        echo ""
+
+        # Extract credentials from linked project
+        log_step "Extracting project credentials..."
+        SUPABASE_STATUS=$(supabase status 2>/dev/null || true)
+        
+        # Try to extract from status output
+        API_URL=$(echo "$SUPABASE_STATUS" | grep "API URL" | awk '{print $NF}' 2>/dev/null || echo "")
+        ANON_KEY=$(echo "$SUPABASE_STATUS" | grep "anon key" | awk '{print $NF}' 2>/dev/null || echo "")
+
+        # If status doesn't have it, construct URL from project-ref
+        if [ -z "$API_URL" ]; then
+            API_URL="https://${PROJECT_REF}.supabase.co"
+            log_info "Constructed API URL from project-ref: $API_URL"
+        fi
+
+        # If we still don't have anon key, try to get it from Supabase config
+        if [ -z "$ANON_KEY" ]; then
+            # Check if there's a config file with the key
+            if [ -f "$PROJECT_ROOT/supabase/.temp/project-ref" ]; then
+                log_info "Project linked, but anon key not found in status"
+                log_info "You may need to get the anon key from Supabase Dashboard"
+            fi
+        fi
+
+        # Create/update Expo secrets file
+        EXPO_ENV_LOCAL="$(get_expo_env_file)"
+        log_step "Creating Expo secrets file at $EXPO_ENV_LOCAL..."
+        
+        if [ -n "$ANON_KEY" ]; then
+            cat > "$EXPO_ENV_LOCAL" << EOF
+# Auto-generated by init.sh
+# Hosted Supabase credentials (project-ref: $PROJECT_REF)
+
+EXPO_PUBLIC_SUPABASE_URL=$API_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
+
+APP_ENV=development
+EOF
+            log_success "Expo secrets file created with credentials"
+        else
+            # Create file with URL but placeholder for key
+            cat > "$EXPO_ENV_LOCAL" << EOF
+# Auto-generated by init.sh
+# Hosted Supabase credentials (project-ref: $PROJECT_REF)
+# TODO: Get anon key from Supabase Dashboard → Project Settings → API
+
+EXPO_PUBLIC_SUPABASE_URL=$API_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY=__REPLACE_WITH_ANON_KEY_FROM_DASHBOARD__
+
+APP_ENV=development
+EOF
+            log_warn "Expo secrets file created, but anon key needs to be set manually"
+            log_info "Get your anon key from: https://supabase.com/dashboard/project/$PROJECT_REF/settings/api"
+        fi
+        echo ""
+
+        # Generate types from hosted project
+        log_step "Generating TypeScript types from hosted database schema..."
+        if [ -d "$PROJECT_ROOT/packages/types" ]; then
+            if supabase gen types typescript --project-id "$PROJECT_REF" > "$PROJECT_ROOT/packages/types/src/database.ts" 2>/dev/null; then
+                log_success "Types generated at packages/types/src/database.ts"
+            else
+                log_warn "Could not generate types from hosted project"
+                log_info "You can generate types later with: supabase gen types typescript --project-id $PROJECT_REF"
+            fi
+        else
+            log_warn "packages/types directory not found, skipping type generation"
+        fi
+
+        cd "$PROJECT_ROOT"
+        echo ""
+        log_success "Hosted Supabase setup complete"
+        log_info "Next: run './scripts/run.sh mobile' to start the app"
+        echo ""
+
+    # -----------------------------------------------------------------------------
+    # Pre-configured Hosted Supabase (credentials already present)
+    # -----------------------------------------------------------------------------
+    elif [ -n "${EXPO_PUBLIC_SUPABASE_URL:-}" ] && [ -n "${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}" ]; then
+        EXPO_ENV_LOCAL="$(get_expo_env_file)"
+        load_expo_env || true
+
+        HOSTED_URL="${EXPO_PUBLIC_SUPABASE_URL:-}"
+        HOSTED_ANON_KEY="${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}"
+
+        if [ -n "$HOSTED_URL" ] && [ -n "$HOSTED_ANON_KEY" ]; then
+            log_success "Supabase credentials detected (hosted/preconfigured). Skipping local Supabase startup."
+            echo "  URL: $HOSTED_URL"
+            echo ""
+            log_info "Next: ensure your hosted project has the schema + seed data:"
+            echo "  - Run: supabase/migrations/00001_initial_schema.sql"
+            echo "  - Run: supabase/seed.sql"
+            echo ""
+        fi
+
+    # -----------------------------------------------------------------------------
+    # Local Supabase Setup (default)
+    # -----------------------------------------------------------------------------
     else
     
     # Check prerequisites

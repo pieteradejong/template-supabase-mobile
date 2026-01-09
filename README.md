@@ -103,21 +103,32 @@ This template uses the `@acme/*` scope for internal workspace packages (`@acme/s
 ## Hosted Supabase (fastest setup)
 
 1. Create a Supabase project (Dashboard).
-2. Apply schema + seed data to hosted Supabase (idempotent):
+2. Initialize project with hosted Supabase (one command):
 
 ```bash
-./scripts/supabase-hosted.sh --project-ref <your-project-ref>
+./scripts/init.sh --project-ref <your-project-ref>
 ```
 
-3. Configure Expo env vars:
-   - Copy `apps/mobile/env.local.example` → `apps/mobile/.env.local`
-   - Fill in:
-     - `EXPO_PUBLIC_SUPABASE_URL=...`
-     - `EXPO_PUBLIC_SUPABASE_ANON_KEY=...`
-4. Start the app:
+This will:
+- Install dependencies
+- Link to your hosted Supabase project
+- Apply migrations and seed data
+- Generate TypeScript types
+- Create `apps/mobile/.env.local` with credentials
+
+**Note:** If the anon key isn't automatically extracted, get it from [Supabase Dashboard](https://supabase.com/dashboard/project/<your-project-ref>/settings/api) and update `apps/mobile/.env.local`.
+
+3. Start the app:
 
 ```bash
 ./scripts/run.sh mobile
+```
+
+**Alternative:** Use the standalone script if you prefer:
+
+```bash
+./scripts/init.sh  # Install dependencies only
+pnpm supabase:hosted --project-ref <your-project-ref>  # Setup hosted Supabase
 ```
 
 ## License
